@@ -1,33 +1,21 @@
-let request = require('request')
+let forecast = require('./utils/forecast')
+let geoCodes = require('./utils/geocode')
 
-let url = 'https://api.darksky.net/forecast/197c56156adfa1558e99a733ee124388/37.8267,-122.4233?lang=ja'
-
-request({ url: url, json: true }, (err, response) => {
+let command = process.argv[2]
+if(command) {
+geoCodes(command, (err, done) => {
     if (err) {
-        console.log('cannot connect to the darksky API.')
-    } else if (response.body.error) {
-        console.log('unable to find location.')
-    } else {
-        console.log(response.body.daily.data[0].summary + ` It is currently ${response.body.currently.temperature} degrees out. there is a ${response.body.currently.precipProbability} possibility of rain.`)
+        return console.log(err)
     }
-})
-
-//geocoding
-//adrress -> lat/long -> weather
-function geoCodes(place) {
-    let geoCodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${place}.json?access_token=pk.eyJ1IjoiYXJwaXRqcyIsImEiOiJjazE1dWsxbzQweXc0M2xxZGtreHloZmZpIn0.ZsPq84XxmY1s6vOC_D-yxw&limit=1`
-    request({ url: geoCodeUrl, json: true }, (err, response) => {
+    console.log(`the longitude and latitude of ${done.location} are ${done.latitude} and ${done.longitude} respectively.`)
+    forecast('lang=en', done.latitude, done.longitude, (err, done) => {
         if (err) {
-            console.log('cannot connect to the mapbox API.')
-        } else if(response.body.features.length === 0) {
-                console.log('no such place exists.')
-        } 
-        else {
-            const latitude = response.body.features[0].center[0]
-            const longitude = response.body.features[0].center[1]
-            console.log(`the longitude and latitude of ${response.body.features[0].text} are ${latitude} and ${longitude} respectively.`)
+            return console.log(err)
         }
-    
     })
+})
+} else {
+    console.log('please enter an address!')
 }
-geoCodes('kathmandu')
+//input for forecast comes from output of geocode
+//nepal ko long and lat is sent as input to forecast so the forecast that gets printed will be of nepal. mind blowing stuff.
